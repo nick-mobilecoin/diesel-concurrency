@@ -7,20 +7,16 @@ use std::thread;
 #[macro_use]
 extern crate diesel;
 
-pub mod schema {
-    table! {
-        users (id) {
-            id -> Int4,
-            name -> Varchar,
-        }
-    }
-}
-
-use self::schema::users::dsl::*;
-
 fn establish_connection() -> PgConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
+}
+
+fn update_counter(conn: &mut PgConnection, value: i32) {
+    diesel::update(simple_table::table)
+        .set(counters::value.eq(value))
+        .execute(conn)
+        .expect("Error updating counter");
 }
 
 fn insert_user(conn: &PgConnection, user_name: &str) {
