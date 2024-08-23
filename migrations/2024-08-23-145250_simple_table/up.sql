@@ -1,6 +1,6 @@
 -- Your SQL goes here
 CREATE TABLE simple_table (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
     counter INTEGER NOT NULL DEFAULT 0
 );
