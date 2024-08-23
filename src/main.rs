@@ -17,6 +17,7 @@ fn establish_connection() -> PgConnection {
 fn insert_user(conn: &mut PgConnection, user_name: &str) {
     diesel::insert_into(simple_table::table)
         .values(simple_table::name.eq(user_name))
+        .on_conflict_do_nothing()
         .execute(conn)
         .expect("Error inserting user");
 }
@@ -29,7 +30,6 @@ fn update_counter(conn: &mut PgConnection, user_name: &str, value: i32) -> Query
 }
 
 fn update_counter_raw(conn: &mut PgConnection, user_name: &str, value: i32) -> QueryResult<usize> {
-    lock_row(conn, user_name).expect("toasty");
     diesel::sql_query("UPDATE simple_table SET counter = $1 WHERE name = $2")
         .bind::<diesel::sql_types::Int4, _>(value)
         .bind::<diesel::sql_types::VarChar, _>(user_name)
@@ -54,9 +54,9 @@ fn run(user_name: &str) {
     loop {
         let result = connection.build_transaction().serializable().run(|conn| {
             // lock_row(conn, user_name)?;
-            // for_update(conn);
-            // update_counter(conn, user_name, counter)
-            update_counter_raw(conn, user_name, counter)
+            // update_counter_raw(conn, user_name, counter)
+            for_update(conn);
+            update_counter(conn, user_name, counter)
         });
         println!("Result for {user_name}: {:?}", result);
         counter += 1;
