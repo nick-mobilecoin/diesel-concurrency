@@ -4,26 +4,17 @@ use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use std::env;
 use std::thread;
-use diesel::query_builder::UpdateStatement;
 use schema::simple_table;
-use crate::schema::simple_table::table;
-use diesel::prelude::*;
 
 fn establish_connection() -> PgConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
 }
 
-fn update_query(conn: &mut PgConnection, user_name: &str, value: i32) -> UpdateStatement<table, WhereClause<diesel::dsl::Eq<simple_table::name, &str>>, Assign<ColumnWrapperForUpdate<simple_table::counter>, Bound<Integer, i32>>> {
+fn update_counter(conn: &mut PgConnection, user_name: &str, value: i32) -> QueryResult<usize> {
     diesel::update(simple_table::table)
         .filter(simple_table::name.eq(user_name))
-        .set(simple_table::counter.eq(value))
-}
-fn update_counter(conn: &mut PgConnection, user_name: &str, value: i32) {
-    let result = diesel::update(simple_table::table)
-        .filter(simple_table::name.eq(user_name))
-        .set(simple_table::counter.eq(value)).execute(conn);
-    println!("Result: {:?}", result);
+        .set(simple_table::counter.eq(value)).execute(conn)
 }
 
 fn insert_user(conn: &mut PgConnection, user_name: &str) {
@@ -34,10 +25,15 @@ fn insert_user(conn: &mut PgConnection, user_name: &str) {
 }
 
 fn run(user_name: &str) {
-    let mut conn = establish_connection();
-    insert_user(&mut conn, user_name);
+    let mut connection = establish_connection();
+    insert_user(&mut connection, user_name);
+    let mut counter = 0;
     loop {
-        update_counter(&mut conn, user_name, 1);
+        let result = connection.build_transaction().serializable().run(|conn| {
+            update_counter(conn, user_name, counter)
+        });
+        println!("Result for {user_name}: {:?}", result);
+        counter += 1;
     }
 }
 
