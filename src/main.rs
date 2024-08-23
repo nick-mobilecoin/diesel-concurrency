@@ -29,6 +29,7 @@ fn update_counter(conn: &mut PgConnection, user_name: &str, value: i32) -> Query
         .execute(conn)
 }
 
+// A raw SQL query just to be sure the `update_counter` above is not the issue
 fn update_counter_raw(conn: &mut PgConnection, user_name: &str, value: i32) -> QueryResult<usize> {
     diesel::sql_query("UPDATE simple_table SET counter = $1 WHERE name = $2")
         .bind::<diesel::sql_types::Int4, _>(value)
@@ -36,15 +37,31 @@ fn update_counter_raw(conn: &mut PgConnection, user_name: &str, value: i32) -> Q
         .execute(conn)
 }
 
+// For the life of me I can't figure out how to get the table name from the
+// table struct, but doing a table lock seems to prevent serialization errors
+// when updating the same table
+fn lock_table(conn: &mut PgConnection) -> QueryResult<()> {
+    diesel::sql_query("LOCK TABLE simple_table IN EXCLUSIVE MODE")
+        .execute(conn)
+        .map(|_| ())
+}
+
+// One can look at https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-ROWS
+// it mentions
+// > Within a REPEATABLE READ or SERIALIZABLE transaction, however, an error
+// > will be thrown if a row to be locked has changed since the transaction started
+// My interpretation of this is that if one uses `for_update` serialized transactions
+// will still throw an error when hitting a for update lock
+fn for_update(conn: &mut PgConnection) {
+    simple_table::table.for_update().execute(conn).expect("Error locking table");
+}
+
+// See above for "FOR UPDATE"
 fn lock_row(conn: &mut PgConnection, user_name: &str) -> QueryResult<()> {
     diesel::sql_query("SELECT * FROM simple_table WHERE name = $1 FOR UPDATE")
         .bind::<diesel::sql_types::VarChar, _>(user_name)
         .execute(conn)
         .map(|_| ())
-}
-
-fn for_update(conn: &mut PgConnection) {
-    simple_table::table.for_update().execute(conn).expect("Error locking table");
 }
 
 fn run(user_name: &str) {
@@ -55,7 +72,7 @@ fn run(user_name: &str) {
         let result = connection.build_transaction().serializable().run(|conn| {
             // lock_row(conn, user_name)?;
             // update_counter_raw(conn, user_name, counter)
-            for_update(conn);
+            lock_table(conn)?;
             update_counter(conn, user_name, counter)
         });
         println!("Result for {user_name}: {:?}", result);
