@@ -1,6 +1,5 @@
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
-use dotenv::dotenv;
 use std::env;
 use std::sync::{Arc, Mutex};
 use std::thread;
