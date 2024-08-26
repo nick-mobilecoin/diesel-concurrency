@@ -81,7 +81,12 @@ fn run(thread_name: &str, start_value: i32, stop_flag: Arc<AtomicBool>) {
         println!("Result for {thread_name}: {:?}", result);
         // These take a time to conflict so sometimes it's best
         // to let it run and then explode
-        result.expect("We FAILED!!!");
+        match result {
+            Ok(_) => {}
+            Err(_) => {
+                stop_flag.store(true, std::sync::atomic::Ordering::Relaxed);
+            }
+        }
         offset += 1;
         if(stop_flag.load(std::sync::atomic::Ordering::Relaxed)) {
             break;
