@@ -12,6 +12,8 @@ diesel::table! {
 diesel::table! {
     serial_key_table (id) {
         id -> Int4,
+        #[max_length = 255]
+        name -> Varchar,
         some_value -> Int4,
     }
 }
@@ -19,6 +21,8 @@ diesel::table! {
 diesel::table! {
     uuid_key_table (id) {
         id -> Uuid,
+        #[max_length = 255]
+        name -> Varchar,
         some_value -> Int4,
     }
 }

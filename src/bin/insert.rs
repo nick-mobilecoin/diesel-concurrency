@@ -1,6 +1,6 @@
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
-use diesel_concurrency::schema::{concurrent_update_table, serial_key_table};
+use diesel_concurrency::schema::serial_key_table;
 use diesel_concurrency::{establish_connection, run_migrations};
 use std::thread;
 
@@ -19,7 +19,7 @@ fn run(thread_name: &str) {
 
 fn insert_serial_key_value(conn: &mut PgConnection, value: i32) -> QueryResult<usize> {
     diesel::insert_into(serial_key_table::table)
-        .values(serial_key_table::some_value.eq(value))
+        .values((serial_key_table::name.eq("hello"), serial_key_table::some_value.eq(value)))
         .execute(conn)
 }
 
