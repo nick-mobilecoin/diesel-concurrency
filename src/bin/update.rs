@@ -1,8 +1,8 @@
-use diesel::prelude::*;
 use diesel::pg::PgConnection;
-use std::thread;
-use diesel_concurrency::{establish_connection, run_migrations};
+use diesel::prelude::*;
 use diesel_concurrency::schema::concurrent_update_table;
+use diesel_concurrency::{establish_connection, run_migrations};
+use std::thread;
 
 fn insert_user(conn: &mut PgConnection, user_name: &str) {
     diesel::insert_into(concurrent_update_table::table)
@@ -43,7 +43,10 @@ fn lock_table(conn: &mut PgConnection) -> QueryResult<()> {
 // My interpretation of this is that if one uses `for_update` serialized transactions
 // will still throw an error when hitting a for update lock
 fn for_update(conn: &mut PgConnection) {
-    concurrent_update_table::table.for_update().execute(conn).expect("Error locking table");
+    concurrent_update_table::table
+        .for_update()
+        .execute(conn)
+        .expect("Error locking table");
 }
 
 // See above for "FOR UPDATE"

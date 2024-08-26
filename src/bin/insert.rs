@@ -1,16 +1,17 @@
-use std::thread;
-use diesel::prelude::*;
 use diesel::pg::PgConnection;
-use diesel_concurrency::{establish_connection, run_migrations};
+use diesel::prelude::*;
 use diesel_concurrency::schema::{concurrent_update_table, serial_key_table};
+use diesel_concurrency::{establish_connection, run_migrations};
+use std::thread;
 
 fn run(thread_name: &str) {
     let mut connection = establish_connection();
     let mut value = 0;
     loop {
-        let result = connection.build_transaction().serializable().run(|conn| {
-            insert_serial_key_value(conn, value)
-        });
+        let result = connection
+            .build_transaction()
+            .serializable()
+            .run(|conn| insert_serial_key_value(conn, value));
         println!("Result for {thread_name}: {:?}", result);
         value += 1;
     }
