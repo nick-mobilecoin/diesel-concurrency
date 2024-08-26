@@ -4,8 +4,8 @@ An example of database contention on the same table
 1. Clone the repository
 2. create a database and set the `DATABASE_URL`
     ```bash
-    createdb diesel_contention
-    export DATABASE_URL=postgres://localhost/diesel_contention
+    createdb diesel_concurrency
+    export DATABASE_URL=postgres://localhost/diesel_concurrency
     ```
 3. Run the application
     ```bash
