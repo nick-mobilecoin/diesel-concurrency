@@ -27,8 +27,10 @@ An example of database contention on the same table
    2. Modify the `serializable()` transaction in `insert.rs` as needed
        ```rust
        let result = connection.build_transaction().serializable().run(|conn| {
-           // lock_row(conn, user_name)?;
-           // update_counter_raw(conn, user_name, counter)
-           lock_table(conn)?;
-           update_counter(conn, user_name, counter)
+           sleep(std::time::Duration::from_millis(random::<u64>() % 50));
+           // insert_serial_key_value(conn, start_value + offset)
+           // insert_uuid_key_value(conn, start_value + offset)
+           // insert_unique_column(conn, start_value + offset)
+           // insert_unique_string_column(conn, start_value + offset)
+           insert_foreign_key_column(conn, start_value + offset)
        });
