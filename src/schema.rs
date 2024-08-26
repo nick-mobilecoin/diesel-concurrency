@@ -10,6 +10,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    foreign_key_column_table (id) {
+        id -> Int4,
+        #[max_length = 255]
+        name -> Varchar,
+        uuid_id -> Nullable<Uuid>,
+    }
+}
+
+diesel::table! {
     serial_key_table (id) {
         id -> Int4,
         #[max_length = 255]
@@ -46,8 +55,11 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(foreign_key_column_table -> uuid_key_table (uuid_id));
+
 diesel::allow_tables_to_appear_in_same_query!(
     concurrent_update_table,
+    foreign_key_column_table,
     serial_key_table,
     unique_column_table,
     unique_string_column_table,

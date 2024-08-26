@@ -4,6 +4,7 @@ use diesel_concurrency::schema::{serial_key_table, unique_column_table, unique_s
 use diesel_concurrency::{establish_connection, run_migrations};
 use std::thread;
 use std::thread::sleep;
+use diesel::sql_types::Uuid;
 
 fn run(thread_name: &str, start_value: i32) {
     let mut connection = establish_connection();
@@ -41,6 +42,12 @@ fn insert_unique_column(conn: &mut PgConnection, value: i32) -> QueryResult<usiz
 
 fn insert_unique_string_column(conn: &mut PgConnection, value: i32) -> QueryResult<usize> {
     let value = value.to_string();
+    diesel::insert_into(unique_string_column_table::table)
+        .values((unique_string_column_table::name.eq("hello"), unique_string_column_table::some_value.eq(value)))
+        .execute(conn)
+}
+
+fn insert_foreign_key_column(conn: &mut PgConnection, value: i32, id: Uuid) -> QueryResult<usize> {
     diesel::insert_into(unique_string_column_table::table)
         .values((unique_string_column_table::name.eq("hello"), unique_string_column_table::some_value.eq(value)))
         .execute(conn)
