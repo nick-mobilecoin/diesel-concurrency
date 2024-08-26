@@ -20,4 +20,15 @@ An example of database contention on the same table
            lock_table(conn)?;
            update_counter(conn, user_name, counter)
        });
+   1. Concurrently inserting rows in the same table
+       ```bash
+       cargo run --bin insert
        ```
+   2. Modify the `serializable()` transaction in `insert.rs` as needed
+       ```rust
+       let result = connection.build_transaction().serializable().run(|conn| {
+           // lock_row(conn, user_name)?;
+           // update_counter_raw(conn, user_name, counter)
+           lock_table(conn)?;
+           update_counter(conn, user_name, counter)
+       });
