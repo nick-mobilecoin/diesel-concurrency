@@ -7,26 +7,6 @@ use std::thread::sleep;
 use rand::random;
 use uuid::Uuid;
 
-fn run(thread_name: &str, start_value: i32) {
-    let mut connection = establish_connection();
-    let mut offset = 0;
-    loop {
-        let result = connection
-            .build_transaction()
-            .serializable()
-            .run(|conn| {
-                sleep(std::time::Duration::from_millis(random::<u64>() % 50));
-                // insert_serial_key_value(conn, start_value + offset)
-                // insert_uuid_key_value(conn, start_value + offset)
-                // insert_unique_column(conn, start_value + offset)
-                // insert_unique_string_column(conn, start_value + offset)
-                insert_foreign_key_column(conn, start_value + offset)
-            });
-        println!("Result for {thread_name}: {:?}", result);
-        offset += 1;
-    }
-}
-
 fn insert_serial_key_value(conn: &mut PgConnection, value: i32) -> QueryResult<usize> {
     diesel::insert_into(serial_key_table::table)
         .values((serial_key_table::name.eq("hello"), serial_key_table::some_value.eq(value)))
@@ -62,6 +42,30 @@ fn insert_foreign_key_column(conn: &mut PgConnection, value: i32) -> QueryResult
         .values((foreign_key_column_table::name.eq("hello"), foreign_key_column_table::uuid_id.eq(id)))
         .execute(conn)
 }
+
+fn run(thread_name: &str, start_value: i32) {
+    let mut connection = establish_connection();
+    let mut offset = 0;
+    loop {
+        let result = connection
+            .build_transaction()
+            .serializable()
+            .run(|conn| {
+                sleep(std::time::Duration::from_millis(random::<u64>() % 50));
+                // insert_serial_key_value(conn, start_value + offset)
+                // insert_uuid_key_value(conn, start_value + offset)
+                // insert_unique_column(conn, start_value + offset)
+                // insert_unique_string_column(conn, start_value + offset)
+                insert_foreign_key_column(conn, start_value + offset)
+            });
+        println!("Result for {thread_name}: {:?}", result);
+        // These take a time to conflict so sometimes it's best
+        // to let it run and then explode
+        result.expect("We FAILED!!!");
+        offset += 1;
+    }
+}
+
 
 fn main() {
     run_migrations();
