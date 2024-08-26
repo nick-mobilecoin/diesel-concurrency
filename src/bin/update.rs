@@ -1,10 +1,7 @@
-mod schema;
-
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use std::env;
 use std::thread;
-use schema::simple_table;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");

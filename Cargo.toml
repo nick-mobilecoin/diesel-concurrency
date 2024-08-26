@@ -1,5 +1,5 @@
 [package]
-name = "diesel-contention"
+name = "diesel-concurrency"
 version = "0.1.0"
 edition = "2021"
 
