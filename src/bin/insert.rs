@@ -1,6 +1,6 @@
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
-use diesel_concurrency::schema::{serial_key_table, unique_column_table, uuid_key_table};
+use diesel_concurrency::schema::{serial_key_table, unique_column_table, unique_string_column_table, uuid_key_table};
 use diesel_concurrency::{establish_connection, run_migrations};
 use std::thread;
 use std::thread::sleep;
@@ -14,7 +14,7 @@ fn run(thread_name: &str, start_value: i32) {
             .serializable()
             .run(|conn| {
                 sleep(std::time::Duration::from_millis(offset as u64));
-                insert_unique_column(conn, start_value + offset)
+                insert_unique_string_column(conn, start_value + offset)
             });
         println!("Result for {thread_name}: {:?}", result);
         offset += 1;
@@ -36,6 +36,13 @@ fn insert_uuid_key_value(conn: &mut PgConnection, value: i32) -> QueryResult<usi
 fn insert_unique_column(conn: &mut PgConnection, value: i32) -> QueryResult<usize> {
     diesel::insert_into(unique_column_table::table)
         .values((unique_column_table::name.eq("hello"), unique_column_table::some_value.eq(value)))
+        .execute(conn)
+}
+
+fn insert_unique_string_column(conn: &mut PgConnection, value: i32) -> QueryResult<usize> {
+    let value = value.to_string();
+    diesel::insert_into(unique_string_column_table::table)
+        .values((unique_string_column_table::name.eq("hello"), unique_string_column_table::some_value.eq(value)))
         .execute(conn)
 }
 
