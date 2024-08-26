@@ -14,12 +14,7 @@ fn run(thread_name: &str, start_value: i32) {
             .build_transaction()
             .serializable()
             .run(|conn| {
-                let id = diesel::insert_into(uuid_key_table::table)
-                    .values((uuid_key_table::name.eq("hello"), uuid_key_table::some_value.eq(start_value + offset)))
-                    .returning(uuid_key_table::id)
-                    .get_result(conn)?;
-                sleep(std::time::Duration::from_millis(offset as u64));
-                insert_foreign_key_column(conn, start_value + offset, id)
+                insert_foreign_key_column(conn, start_value + offset)
             });
         println!("Result for {thread_name}: {:?}", result);
         offset += 1;
@@ -51,7 +46,11 @@ fn insert_unique_string_column(conn: &mut PgConnection, value: i32) -> QueryResu
         .execute(conn)
 }
 
-fn insert_foreign_key_column(conn: &mut PgConnection, value: i32, id: Uuid) -> QueryResult<usize> {
+fn insert_foreign_key_column(conn: &mut PgConnection, value: i32) -> QueryResult<usize> {
+    let id: Uuid = diesel::insert_into(uuid_key_table::table)
+        .values((uuid_key_table::name.eq("hello"), uuid_key_table::some_value.eq(value)))
+        .returning(uuid_key_table::id)
+        .get_result(conn)?;
     diesel::insert_into(foreign_key_column_table::table)
         .values((foreign_key_column_table::name.eq("hello"), foreign_key_column_table::uuid_id.eq(id)))
         .execute(conn)
