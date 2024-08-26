@@ -1,2 +1,2 @@
 -- This file should undo anything in `up.sql`
-DROP TABLE update_row;
+DROP TABLE concurrent_update_table;

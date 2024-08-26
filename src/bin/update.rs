@@ -2,7 +2,7 @@ use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use std::env;
 use std::thread;
-use diesel_concurrency::schema::simple_table;
+use diesel_concurrency::schema::concurrent_update_table;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
@@ -13,23 +13,23 @@ fn establish_connection() -> PgConnection {
 }
 
 fn insert_user(conn: &mut PgConnection, user_name: &str) {
-    diesel::insert_into(simple_table::table)
-        .values(simple_table::name.eq(user_name))
+    diesel::insert_into(concurrent_update_table::table)
+        .values(concurrent_update_table::name.eq(user_name))
         .on_conflict_do_nothing()
         .execute(conn)
         .expect("Error inserting user");
 }
 
 fn update_counter(conn: &mut PgConnection, user_name: &str, value: i32) -> QueryResult<usize> {
-    diesel::update(simple_table::table)
-        .filter(simple_table::name.eq(user_name))
-        .set(simple_table::counter.eq(value))
+    diesel::update(concurrent_update_table::table)
+        .filter(concurrent_update_table::name.eq(user_name))
+        .set(concurrent_update_table::counter.eq(value))
         .execute(conn)
 }
 
 // A raw SQL query just to be sure the `update_counter` above is not the issue
 fn update_counter_raw(conn: &mut PgConnection, user_name: &str, value: i32) -> QueryResult<usize> {
-    diesel::sql_query("UPDATE simple_table SET counter = $1 WHERE name = $2")
+    diesel::sql_query("UPDATE concurrent_update_table SET counter = $1 WHERE name = $2")
         .bind::<diesel::sql_types::Int4, _>(value)
         .bind::<diesel::sql_types::VarChar, _>(user_name)
         .execute(conn)
@@ -39,7 +39,7 @@ fn update_counter_raw(conn: &mut PgConnection, user_name: &str, value: i32) -> Q
 // table struct, but doing a table lock seems to prevent serialization errors
 // when updating the same table
 fn lock_table(conn: &mut PgConnection) -> QueryResult<()> {
-    diesel::sql_query("LOCK TABLE simple_table IN EXCLUSIVE MODE")
+    diesel::sql_query("LOCK TABLE concurrent_update_table IN EXCLUSIVE MODE")
         .execute(conn)
         .map(|_| ())
 }
@@ -51,12 +51,12 @@ fn lock_table(conn: &mut PgConnection) -> QueryResult<()> {
 // My interpretation of this is that if one uses `for_update` serialized transactions
 // will still throw an error when hitting a for update lock
 fn for_update(conn: &mut PgConnection) {
-    simple_table::table.for_update().execute(conn).expect("Error locking table");
+    concurrent_update_table::table.for_update().execute(conn).expect("Error locking table");
 }
 
 // See above for "FOR UPDATE"
 fn lock_row(conn: &mut PgConnection, user_name: &str) -> QueryResult<()> {
-    diesel::sql_query("SELECT * FROM simple_table WHERE name = $1 FOR UPDATE")
+    diesel::sql_query("SELECT * FROM concurrent_update_table WHERE name = $1 FOR UPDATE")
         .bind::<diesel::sql_types::VarChar, _>(user_name)
         .execute(conn)
         .map(|_| ())
