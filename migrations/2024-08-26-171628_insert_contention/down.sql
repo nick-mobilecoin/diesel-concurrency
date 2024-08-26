@@ -2,3 +2,4 @@
 DROP TABLE serial_key_table;
 DROP TABLE uuid_key_table;
 DROP TABLE unique_column_table;
+DROP TABLE unique_string_column_table;

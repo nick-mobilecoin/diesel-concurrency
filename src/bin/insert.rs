@@ -3,6 +3,7 @@ use diesel::prelude::*;
 use diesel_concurrency::schema::{serial_key_table, unique_column_table, uuid_key_table};
 use diesel_concurrency::{establish_connection, run_migrations};
 use std::thread;
+use std::thread::sleep;
 
 fn run(thread_name: &str, start_value: i32) {
     let mut connection = establish_connection();
@@ -11,7 +12,10 @@ fn run(thread_name: &str, start_value: i32) {
         let result = connection
             .build_transaction()
             .serializable()
-            .run(|conn| insert_unique_column(conn, start_value + offset));
+            .run(|conn| {
+                sleep(std::time::Duration::from_millis(offset as u64));
+                insert_unique_column(conn, start_value + offset)
+            });
         println!("Result for {thread_name}: {:?}", result);
         offset += 1;
     }
@@ -37,6 +41,13 @@ fn insert_unique_column(conn: &mut PgConnection, value: i32) -> QueryResult<usiz
 
 fn main() {
     run_migrations();
+
+    {
+        let mut conn = establish_connection();
+        diesel::delete(serial_key_table::table).execute(&mut conn).unwrap();
+        diesel::delete(uuid_key_table::table).execute(&mut conn).unwrap();
+        diesel::delete(unique_column_table::table).execute(&mut conn).unwrap();
+    }
 
     let handle1 = thread::spawn(move || {
         run("Thread 1", 0);
