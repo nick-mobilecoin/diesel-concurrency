@@ -1,6 +1,6 @@
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
-use diesel_concurrency::schema::serial_key_table;
+use diesel_concurrency::schema::{serial_key_table, uuid_key_table};
 use diesel_concurrency::{establish_connection, run_migrations};
 use std::thread;
 
@@ -11,7 +11,7 @@ fn run(thread_name: &str) {
         let result = connection
             .build_transaction()
             .serializable()
-            .run(|conn| insert_serial_key_value(conn, value));
+            .run(|conn| insert_uuid_key_value(conn, value));
         println!("Result for {thread_name}: {:?}", result);
         value += 1;
     }
@@ -20,6 +20,12 @@ fn run(thread_name: &str) {
 fn insert_serial_key_value(conn: &mut PgConnection, value: i32) -> QueryResult<usize> {
     diesel::insert_into(serial_key_table::table)
         .values((serial_key_table::name.eq("hello"), serial_key_table::some_value.eq(value)))
+        .execute(conn)
+}
+
+fn insert_uuid_key_value(conn: &mut PgConnection, value: i32) -> QueryResult<usize> {
+    diesel::insert_into(uuid_key_table::table)
+        .values((uuid_key_table::name.eq("hello"), uuid_key_table::some_value.eq(value)))
         .execute(conn)
 }
 
