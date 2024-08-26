@@ -1,7 +1,7 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    simple_table (id) {
+    update_row (id) {
         id -> Int4,
         #[max_length = 255]
         name -> Varchar,
