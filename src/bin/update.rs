@@ -1,16 +1,8 @@
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
-use std::env;
 use std::thread;
+use diesel_concurrency::{establish_connection, run_migrations};
 use diesel_concurrency::schema::concurrent_update_table;
-use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-
-const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
-
-fn establish_connection() -> PgConnection {
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
-}
 
 fn insert_user(conn: &mut PgConnection, user_name: &str) {
     diesel::insert_into(concurrent_update_table::table)
@@ -79,10 +71,7 @@ fn run(user_name: &str) {
 }
 
 fn main() {
-    {
-        let mut connection = establish_connection();
-        connection.run_pending_migrations(MIGRATIONS).expect("Failed to run migrations");
-    }
+    run_migrations();
 
     let handle1 = thread::spawn(move || {
         run("User1");
