@@ -71,7 +71,7 @@ fn run(thread_name: &str, start_value: i32, stop_flag: Arc<AtomicBool>) {
     let mut offset = 0;
     loop {
         let result = connection.build_transaction().serializable().run(|conn| {
-            // sleep(std::time::Duration::from_millis(random::<u64>() % 50));
+            sleep(std::time::Duration::from_millis(random::<u64>() % 50));
             // insert_serial_key_value(conn, start_value + offset)
             // insert_uuid_key_value(conn, start_value + offset)
             // insert_unique_column(conn, start_value + offset)
