@@ -4,6 +4,7 @@ use diesel_concurrency::schema::{foreign_key_column_table, serial_key_table, uni
 use diesel_concurrency::{establish_connection, run_migrations};
 use std::thread;
 use std::thread::sleep;
+use rand::random;
 use uuid::Uuid;
 
 fn run(thread_name: &str, start_value: i32) {
@@ -14,6 +15,11 @@ fn run(thread_name: &str, start_value: i32) {
             .build_transaction()
             .serializable()
             .run(|conn| {
+                sleep(std::time::Duration::from_millis(random::<u64>() % 50));
+                // insert_serial_key_value(conn, start_value + offset)
+                // insert_uuid_key_value(conn, start_value + offset)
+                // insert_unique_column(conn, start_value + offset)
+                // insert_unique_string_column(conn, start_value + offset)
                 insert_foreign_key_column(conn, start_value + offset)
             });
         println!("Result for {thread_name}: {:?}", result);
@@ -51,6 +57,7 @@ fn insert_foreign_key_column(conn: &mut PgConnection, value: i32) -> QueryResult
         .values((uuid_key_table::name.eq("hello"), uuid_key_table::some_value.eq(value)))
         .returning(uuid_key_table::id)
         .get_result(conn)?;
+    sleep(std::time::Duration::from_millis(random::<u64>() % 50));
     diesel::insert_into(foreign_key_column_table::table)
         .values((foreign_key_column_table::name.eq("hello"), foreign_key_column_table::uuid_id.eq(id)))
         .execute(conn)
@@ -65,6 +72,7 @@ fn main() {
         diesel::delete(foreign_key_column_table::table).execute(&mut conn).unwrap();
         diesel::delete(uuid_key_table::table).execute(&mut conn).unwrap();
         diesel::delete(unique_column_table::table).execute(&mut conn).unwrap();
+        diesel::delete(unique_string_column_table::table).execute(&mut conn).unwrap();
     }
 
     let handle1 = thread::spawn(move || {
